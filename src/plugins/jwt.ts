@@ -2,18 +2,20 @@
 import { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import jwt from "@fastify/jwt";
 import { APP_CONFIG } from "../config/env";
+import fp from "fastify-plugin";
 
-import "@fastify/jwt"
 
 declare module "@fastify/jwt" {
   interface FastifyJWT {
     payload: {
-      sub: string;
+      id: string;
       email: string;
+      role?: string;
     };
     user: {
-      sub: string;
+      id: string;
       email: string;
+      role?: string;
       iat: number;
       exp: number;
     };
@@ -26,8 +28,6 @@ declare module "fastify" {
   }
 }
 
-import fp from "fastify-plugin";
-
 const jwtPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   await fastify.register(jwt, {
     secret: APP_CONFIG.JWT_SECRET,
@@ -38,6 +38,17 @@ const jwtPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
     async function (request: FastifyRequest, reply: FastifyReply) {
       try {
         await request.jwtVerify();
+        // Normalize the verified token payload so handlers can use `user.id`
+        // instead of `user.sub`. This keeps code that expects `AuthUser.id`
+        // working without changing every handler.
+        try {
+          const u: any = (request as any).user;
+          if (u && !u.id && u.sub) {
+            u.id = u.sub;
+          }
+        } catch (e) {
+          // ignore normalization errors
+        }
       } catch (err) {
         reply.send(err);
       }

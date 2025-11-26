@@ -21,6 +21,12 @@ export const authService = {
       throw new Error("name, email, password, role are required");
     }
 
+    // Ensure both username and email are unique
+    const nameExists = await userModel.existsByName(name);
+    if (nameExists) {
+      throw new Error("User with this name already exists");
+    }
+
     const exists = await userModel.existsByEmail(email);
     if (exists) {
       throw new Error("User with this email already exists");
@@ -47,7 +53,7 @@ export const authService = {
       location: created.location,
     };
 
-    const token = fastify.jwt.sign({ sub: authUser.id, email: authUser.email });
+    const token = fastify.jwt.sign({ id: authUser.id, email: authUser.email, role: authUser.role });
 
     return { user: authUser, token };
   },
@@ -80,7 +86,7 @@ export const authService = {
       location: user.location,
     };
 
-    const token = fastify.jwt.sign({ sub: authUser.id, email: authUser.email });
+    const token = fastify.jwt.sign({ id: authUser.id, email: authUser.email, role: authUser.role });
 
     return { user: authUser, token };
   },

@@ -5,6 +5,7 @@ import jwtPlugin from "./plugins/jwt";
 import authRoutes from "./routes/auth.routes";
 import { APP_CONFIG } from "./config/env";
 import mongoPlugin from "./plugins/mongo";
+import projectRoutes from "./routes/project.routes";
 
 async function buildServer() {
   const fastify = Fastify({ logger: true });
@@ -14,6 +15,7 @@ async function buildServer() {
   await fastify.register(mongoPlugin)
 
   await fastify.register(authRoutes);
+  await fastify.register(projectRoutes);
 
   return fastify;
 }
@@ -34,4 +36,4 @@ buildServer()
   .catch((err) => {
     console.error(err);
     process.exit(1);
-  });
+});

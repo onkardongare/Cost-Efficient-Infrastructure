@@ -8,6 +8,7 @@ const authRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   // Signup
   fastify.post<{ Body: SignupBody }>("/auth/signup", async (request, reply) => {
     try {
+      console.log("Signup request body:", request.body);
       const data = await authService.signup(fastify, request.body);
       return reply.send(data);
     } catch (err: any) {

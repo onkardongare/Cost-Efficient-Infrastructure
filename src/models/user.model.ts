@@ -21,7 +21,7 @@ const LocationSchema = new Schema<LocationInfo>(
 
 const UserSchema = new Schema<UserDoc>(
   {
-    name: { type: String, required: true },
+    name: { type: String, required: true, unique: true, index: true },
     email: { type: String, required: true, unique: true, index: true },
     role: {
       type: String,
@@ -50,6 +50,11 @@ export const userModel = {
       location: created.location,
       passwordHash: created.passwordHash,
     };
+  },
+
+  async existsByName(name: string): Promise<boolean> {
+    const count = await UserModel.countDocuments({ name }).exec();
+    return count > 0;
   },
 
   async findByEmail(email: string): Promise<UserRecord | null> {
