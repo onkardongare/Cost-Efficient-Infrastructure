@@ -1,0 +1,59 @@
+name: Backend CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    # Make secrets available to the app during build/test
+    env:
+      NODE_ENV: test
+      MONGO_URI: ${{ secrets.MONGO_URI }}
+      MONGO_DB_NAME: ${{ secrets.MONGO_DB_NAME }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      FRONTEND_ORIGIN: ${{ secrets.FRONTEND_ORIGIN }}
+      PORT: 4000
+
+    steps:
+      # 1) Checkout repo
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2) Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      # 3) Install dependencies
+      - name: Install dependencies
+        run: npm ci
+
+      # 4) Lint (non-blocking for now)
+      - name: Lint
+        run: npm run lint
+        continue-on-error: true
+
+      # 5) Build TypeScript -> dist/server.js
+      - name: Build
+        run: npm run build
+
+      # 6) Run tests (your script already exits 0)
+      - name: Run tests
+        run: npm test
+
+      # 7)Deploy backend
+      
+      - name: Trigger deploy
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        env:
+          BACKEND_DEPLOY_HOOK: ${{ secrets.BACKEND_DEPLOY_HOOK }}
+        run: |
+          echo "Triggering backend deploy..."
+          curl -X POST "$BACKEND_DEPLOY_HOOK"
